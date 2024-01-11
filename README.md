@@ -15,7 +15,7 @@ items:
   smzdm: "https://www.smzdm.com/"
 
 ```
-the `key` defined here will be overwrited in `.env`.
+the `key` defined here will be overwrote in `.env`.
 `items` is pre-defined items which you can get quickly by another route(see below).
 ## usage
 ```bash
