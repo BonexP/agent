@@ -1,7 +1,49 @@
 from flask import Flask, make_response,request
 import requests
 import base64
+import yaml
+import os
+from dotenv import load_dotenv
+
 app = Flask(__name__)
+
+def load_yaml(path):
+    with open(path) as f:
+        d=yaml.load(f, Loader=yaml.FullLoader)
+        for i in d:
+            app.config[i]=d[i]
+        return d
+    
+
+load_yaml('config.yaml')
+load_dotenv('.env')
+
+print(f"key from config.yaml is {app.config['key']}")
+print(f"key from .env is {os.getenv('KEY')}")
+
+if os.getenv('KEY')==None:
+    pass
+elif os.getenv('KEY'):
+    app.config.update(key=os.getenv('KEY'))
+
+print(f"final key is {app.config['key']}")
+
+
+def proxy(url):
+    r = requests.get(url)
+    if r.status_code == 200:          
+        return r.content
+    else:
+        return make_response("Error: Unable to fetch content from the URL.",504)
+
+        
+
+
+@app.route('/pre')
+def pre():
+    id=request.args.get('id')
+    return proxy(app.config['items'][id])
+    
 
 @app.route('/')
 def hello_world():
@@ -16,16 +58,10 @@ def check_args():
     key = request.args.get('key')
 
     if item_encoded and key:
-        if key != 'abcabc':
+        if key != app.config['key']:
             return "Invalid key"
         item_decoded = base64.b64decode(item_encoded).decode('utf-8')
-        response = requests.get(item_decoded)
-        
-        if response.status_code == 200:
-            content = response.text            
-            return f"{content}"
-        else:
-            return make_response("Error: Unable to fetch content from the URL.",504)
+        return proxy(item_decoded)
     if item_encoded and key:
         return make_response('Both item and key are present in the arguments.',400)
     else:
