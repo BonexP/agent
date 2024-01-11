@@ -1,4 +1,4 @@
-from flask import Flask, make_response,request
+from flask import Flask, config, make_response,request
 import requests
 import base64
 import yaml
@@ -7,16 +7,23 @@ from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-def load_yaml(path):
-    with open(path) as f:
+def load_yaml(path,configUrl):
+    try:
+        f=open(path)
         d=yaml.load(f, Loader=yaml.FullLoader)
         for i in d:
             app.config[i]=d[i]
         return d
-    
+    except FileNotFoundError as e:
+        f=requests.get(configUrl).content
+        d=yaml.load(f, Loader=yaml.FullLoader)
+        for i in d:
+            app.config[i]=d[i]
+        return d
 
-load_yaml('config.yaml')
+
 load_dotenv('.env')
+load_yaml('config.yaml',os.getenv('CONFIG_URL'))
 
 print(f"key from config.yaml is {app.config['key']}")
 print(f"key from .env is {os.getenv('KEY')}")
